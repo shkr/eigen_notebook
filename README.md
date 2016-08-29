@@ -1,6 +1,6 @@
 # eigen_notebook
 
-### (Quick start) [http://eigen.tuxfamily.org/dox/GettingStarted.html]
+### [Quick start](http://eigen.tuxfamily.org/dox/GettingStarted.html)
 
 
 ```
