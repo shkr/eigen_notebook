@@ -163,7 +163,7 @@ class CLRM(object):
             # Use ADVI for initialization
             mu, sds, elbo = pm.variational.advi(n=100000)
             step = pm.NUTS(scaling=model.dict_to_array(sds)**2, is_cov=True)
-            trace = pm.sample(number_of_samples, step, start=mu)       
+            trace = pm.sample(number_of_samples, step, start=mu)
         return trace
     
     @staticmethod
@@ -171,60 +171,24 @@ class CLRM(object):
         
         for result in results:
             
-            print("Results and Diagnostics for {}".format(result.file_name))
+            print("Results and Diagnostics for {}".format(result.files))
 
             # plot the trace
             pm.summary(result.trace)
             pm.traceplot(result.trace)
 
-            # plot the ppc
-            """
-            Posterior Predictive Distribution
-            contains 10000 generated data sets (containing 100 samples each), 
-            each using a different parameter setting from the posterior
-            """
-            ppc = pm.sampling.sample_ppc(result.trace, model=result.model)
-
-        
-            # posterior predictive mean
-            def plot_posterior_predictive_mean(ax):
-                # Posterior Predictive of the mean
-                sns.distplot([np.mean(n) for n in ppc['y_obs']], kde=False, ax=ax)
-                ax.axvline(y.mean())
-                ax.set(title='Posterior predictive of the mean', xlabel='mean(y_obs)', ylabel='Frequency');
-                return ax
-
-            # posterior cdf
-            def plot_posterior_cdf(ax):
-                sns.distplot(y,
-                     hist_kws=dict(cumulative=True),
-                     kde_kws=dict(cumulative=True),
-                     ax=ax)
-                sns.distplot(y,
-                     hist_kws=dict(cumulative=True),
-                     kde_kws=dict(cumulative=True),
-                     ax=ax)
-
-                # Posterior Predictive of the mean
-                sns.distplot([n.mean() for n in ppc['y_obs']], kde=False, ax=ax)
-                ax.axvline(y.mean())
-                ax.set(title='Posterior predictive of the mean', xlabel='mean(y_obs)', ylabel='Frequency');
-
-
-            # Linear Fit
-            def plot_linear_fit(ax):
+            for index, file_name in enumerate(result.files):
+                
+                alpha = np.mean(result.trace['alpha'][:, index])
+                beta = np.mean(result.trace['beta'][:, index])
+                x, y = CLRM.xy_op(file_name)
+                fig = plt.figure(figsize=(10, 10))
+                ax = fig.add_subplot(111)
                 # Select Best Estimate
-                b_mean = np.mean([item['b'] for item in trace])
-                a_mean = np.mean([item['a'] for item in trace])
                 ax.scatter(x[:], y[:], s=10, c='g')
-                ax.plot(x[:], (b_mean + a_mean*x)[:])
+                ax.plot(x[:], (beta + alpha*x)[:])
                 ax.set_ylabel("Y")
                 ax.set_xlabel('X')
                 ax.set_title("training_data [{}] with linear fit".format(file_name))
                 ax.legend() 
-
-
-            fig = plt.figure(figsize=(10, 10))
-            plot_posterior_predictive_mean(fig.add_subplot(211))
-            plot_linear_fit(fig.add_subplot(212))
-            fig.show() 
+                fig.show() 
